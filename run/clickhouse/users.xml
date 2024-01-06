@@ -1,0 +1,17 @@
+<users>
+    <!-- If user name was not specified, 'default' user is used. -->
+    <tymbaca>
+        <password>tiko77</password>
+        <!-- Or -->
+        <!-- <password_sha256_hex></password_sha256_hex> -->
+
+        <access_management>1</access_management>
+
+
+        <profile>tymbaca</profile>
+
+        <quota>default</quota>
+        <default_database>default</default_database>
+    </tymbaca>
+    <!-- Other users settings -->
+</users>
