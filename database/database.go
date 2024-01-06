@@ -1,13 +1,18 @@
-package db
+package database
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/tymbaca/stackexchange-analyzer/puller"
 )
 
-func ConnectAndInit() clickhouse.Conn {
+type DB struct {
+	clickhouse.Conn
+}
+
+func New() *DB {
 	conn, err := clickhouse.Open(&clickhouse.Options{
 		Addr: []string{"localhost:9000"},
 		Auth: clickhouse.Auth{
@@ -57,5 +62,40 @@ func ConnectAndInit() clickhouse.Conn {
 		panic(err)
 	}
 
-	return conn
+	return &DB{conn}
+}
+
+func (db *DB) PushQuestions(questions []puller.Question) error {
+	ctx := context.Background()
+	batch, err := db.PrepareBatch(ctx, "INSERT INTO questions")
+	if err != nil {
+		return err
+	}
+
+	for _, q := range questions {
+		err := batch.Append(
+			q.Tags,
+			q.Owner.UserId,
+			q.IsAnswered,
+			q.ViewCount,
+			q.AnswerCount,
+			q.Score,
+			q.LastActivityDate,
+			q.CreationDate,
+			q.QuestionId,
+			q.ContentLicense,
+			q.Link,
+			q.Title,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = batch.Send()
+	if err != nil {
+		return err
+	}
+	return nil
+
 }

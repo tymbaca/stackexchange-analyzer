@@ -4,7 +4,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/tymbaca/stackexchange-analyzer/db"
+	"time"
+
+	"github.com/tymbaca/stackexchange-analyzer/database"
+	"github.com/tymbaca/stackexchange-analyzer/puller"
 )
 
 func MustGetenv(key string) string {
@@ -16,24 +19,29 @@ func MustGetenv(key string) string {
 }
 
 func main() {
-	_ = db.ConnectAndInit()
+	db := database.New()
 	log.Printf("successfully connected to clickhouse")
-	// fmt.Println(1 - 0.9)
-	// pullerToken := MustGetenv("STACK_TOKEN")
-	// pullerKey := MustGetenv("STACK_KEY")
 
-	// cfg := puller.NewConfig(pullerToken, pullerKey).
-	// 	WithInterval(0 * time.Second).
-	// 	WithTimeout(20 * time.Second)
+	pullerToken := MustGetenv("STACK_TOKEN")
+	pullerKey := MustGetenv("STACK_KEY")
 
-	// p := puller.NewPuller(cfg)
+	cfg := puller.NewConfig(pullerToken, pullerKey).
+		WithInterval(0 * time.Second).
+		WithTimeout(20 * time.Second)
 
-	// maxDate := time.Now()
-	// minDate := maxDate.Add(-24 * time.Hour)
-	// questions, err := p.GetQuestinsByDateRange(minDate, maxDate)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	p := puller.NewPuller(cfg)
+
+	maxDate := time.Now()
+	minDate := maxDate.Add(-24 * time.Hour)
+	questions, err := p.GetQuestinsByDateRange(minDate, maxDate)
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.PushQuestions(questions)
+	if err != nil {
+		panic(err)
+	}
 
 	// file, err := os.Create("output.txt")
 	// if err != nil {
